@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞机大战</title>
+</head>
+
+<body>
+    <button onclick="alert()"></button>
+    总积分:<span id="score">0</span>
+    上下左右，J射击K炸弹
+</body>
+
+</html>
+<script>
+    function alert(){
+        console.log(11111111)
+    }
+    class Map {
+        // 地图类
+        static status = false  // 开始游戏开关
+        static height = 400;
+        static width = 400;
+        static score = 0
+        static map = null
+        static isBound = null
+        static changeScore(bool, num = 1) {
+            // 地图分数
+            if (bool) {
+                Map.score += num
+            } else {
+                Map.score -= num
+            }
+            document.getElementById('score').innerText = Map.score
+        }
+        constructor() {
+            Map.status = true
+            this._initMap()
+            this.getBound()
+        }
+        _initMap() {
+            // 初始化地图
+            document.body.style.overflow = 'hidden'
+            let div = document.createElement('div')
+            div.style = `height:${Map.height}px;width:${Map.width}px;
+        border:1px solid;margin:100px auto;`
+            this.div = div
+            Map.map = this
+            document.body.appendChild(div)
+        }
+        getBound() {
+            // 地图边界
+            let top = this.div.offsetTop
+            let bottom = this.div.offsetTop + this.div.offsetHeight
+            let left = this.div.offsetLeft
+            let right = this.div.offsetLeft + this.div.offsetWidth
+            Map.isBound = { top, bottom, left, right }
+            return { top, bottom, left, right }
+        }
+        pause() {
+            // 游戏状态
+            Map.status = !Map.status
+        }
+    }
+    class Flyer {
+        static height = 10;
+        static width = 10;
+        static speed = 3;
+        static imgUrl = ''
+        static boomTime = 3
+        constructor() {
+            this.map = Map.map
+            this.isBound = Map.isBound
+            this.xBtn = 0
+            this.yBtn = 0
+            this.left = this.isBound.left + Map.width / 2 - Flyer.width
+            this.top = this.isBound.bottom - Flyer.height
+            this.timer = null
+            this.show = true
+            this.shotTimer = null
+            this._initFly()
+            this._move()
+        }
+        _initFly() {
+            let div = document.createElement('div')
+            this.div = div
+            div.style = `
+            position:absolute;
+            top:${this.top}px;
+            left:${this.left}px;
+            height:${Flyer.height}px;
+            width:${Flyer.width}px;
+            background:red;`
+            document.body.addEventListener('keydown', (e) => this._keyListener(e))
+            document.body.addEventListener('keyup', (e) => this._clearListener(e))
+            Map.map.div.appendChild(this.div)
+        }
+        _clearListener(e) {
+            switch (e.keyCode) {
+                case 38:
+                    // 上
+                    this.yBtn = 0
+                    break;
+                case 37:
+                    this.xBtn = 0
+                    // 左
+                    break;
+                case 40:
+                    // 下
+                    this.yBtn = 0
+                    break;
+                case 39:
+                    this.xBtn = 0
+                    // 右
+                    break;
+                case 74:
+                    // 射击
+                    this.shotTimer && clearInterval(this.shotTimer)
+                    this.shotTimer = null
+                    break;
+                default:
+                    // 暂未开发按钮
+                    break;
+            }
+        }
+        _keyListener(e) {
+            switch (e.keyCode) {
+                case 40:
+                    // 上
+                    if (this.yBtn != 1) {
+                        this.yBtn = 1
+                        this._stop()
+                        this._move()
+                    }
+                    break;
+                case 37:
+                    if (this.xBtn != -1) {
+                        this.xBtn = -1
+                        this._stop()
+                        this._move()
+                    }
+                    // 左
+                    break;
+                case 38:
+                    if (this.yBtn != -1) {
+                        this.yBtn = -1
+                        this._stop()
+                        this._move()
+                    }
+                    // 下
+                    break;
+                case 39:
+                    if (this.xBtn != 1) {
+                        this.xBtn = 1
+                        this._stop()
+                        this._move()
+                    }
+                    // 右
+                    break;
+                case 74:
+                    // 射击
+                    // 单点设计
+                    new Zidan(this)
+                    // 长按射击
+                    // if(!this.shotTimer){
+                    //     this.shotTimer = setInterval(() => {
+                    //         new Zidan(this)
+                    //     }, 150);
+                    // }
+                    break;
+                case 75:
+                    // 炸弹
+                    if (Flyer.boomTime-- > 0) {
+                        debugger
+                        Map.changeScore(true, Diren.list.length)
+                        Diren.destroyAll()
+                    } else {
+                        alert('炸弹已经用完了!快点充钱吧!')
+                    }
+                    break;
+                default:
+                    // 暂未开发按钮
+                    break;
+            }
+        }
+        _move() {
+            if (!this.timer) {
+                this.timer = setInterval(() => {
+                    let left = parseInt(this.div.style.left) + this.xBtn * Flyer.speed
+                    let top = parseInt(this.div.style.top) + this.yBtn * Flyer.speed
+                    if (left < this.isBound.left || left > this.isBound.right - Flyer.width) {
+                        left = left < this.isBound.left ? this.isBound.left : this.isBound.right - Flyer.width
+                    }
+                    if (top < this.isBound.top || top > this.isBound.bottom - Flyer.height) {
+                        top = top < this.isBound.top ? this.isBound.top : this.isBound.bottom - Flyer.height
+                    }
+                    this.left = left;
+                    this.top = top
+                    this.div.style.top = top + 'px'
+                    this.div.style.left = left + 'px'
+
+                }, 10);
+            }
+        }
+        _stop() {
+            this.timer && clearInterval(this.timer)
+            this.timer = null
+        }
+    }
+    class Diren {
+        static height = 15;
+        static width = 15;
+        static speed = 1;
+        static imgUrl = ''
+        // 出现延迟时间
+        static delay = 500
+        // 总列表
+        static list = []
+        static destroyAll() {
+            Diren.list.forEach(ele => {
+                Map.map.div.removeChild(ele.div)
+            })
+            Diren.list = []
+        }
+        constructor() {
+            this.timer = null
+            this.map = Map.map
+            this.left = null
+            this.top = null
+            this.isBound = Map.isBound
+            this._initDiren()
+            Diren.list.push(this)
+        }
+        _initDiren() {
+            let div = document.createElement('div')
+            this.div = div
+            let left = this.isBound.right - Diren.width - Math.random() * Map.width
+            let top = this.isBound.top - 30
+            this.left = left
+            this.top = top
+            div.style = `
+            position:absolute;
+            top:${this.top}px;
+            left:${this.left}px;
+            height:${Diren.height}px;
+            width:${Diren.width}px;
+            background:black;`
+            Map.map.div.appendChild(this.div)
+            this.move()
+        }
+        move() {
+            if (!this.timer) {
+                this.timer = setInterval(() => {
+                    let top = parseInt(this.div.style.top) + Diren.speed
+                    if (top > this.isBound.bottom) {
+                        Map.changeScore(false)
+                        this.destroy()
+                    }
+                    this.top = top
+                    this.div.style.top = top + 'px'
+                }, 10);
+            }
+        }
+        rushB() {
+            setInterval(() => {
+                new Diren(Map.map)
+            }, Diren.delay);
+        }
+        destroy() {
+            this.timer && clearInterval(this.timer)
+            this.timer = null
+            Diren.list.forEach((ele, index) => {
+                if (ele.div == this.div) {
+                    Diren.list.splice(index, 1)
+                }
+            })
+            Map.map.div.removeChild(this.div)
+
+        }
+    }
+    class Zidan {
+        static height = 8;
+        static width = 8
+        static speed = 10;
+        constructor(div) {
+            this.timer = null
+            this.from = div
+            this.map = Map.map
+            this.left = null
+            this.top = null
+            this.isBound = Map.isBound
+            this._initZidan()
+        }
+        _initZidan() {
+            let left = this.from.left + this.from.div.offsetWidth / 2 - Zidan.width / 2
+            let top = this.from.top
+            this.left = left
+            this.top = top
+            let div = document.createElement('div')
+            this.div = div
+            this.div.style = `
+            position:absolute;
+            top:${this.top}px;
+            left:${this.left}px;
+            height:${Zidan.height}px;
+            width:${Zidan.width}px;
+            background:black;`
+            this.move()
+            Map.map.div.appendChild(this.div)
+        }
+        move() {
+            if (!this.timer) {
+                this.timer = setInterval(() => {
+                    this.punch()
+                    let top = parseInt(this.div.style.top) - Zidan.speed
+                    if (top < this.isBound.top) {
+                        this.destroy()
+                    }
+                    this.top = top
+                    this.div.style.top = top + 'px'
+                }, 10);
+            }
+        }
+        punch() {
+            Diren.list.forEach(ele => {
+                if (this.top < ele.top + ele.div.offsetHeight &&
+                    this.left > ele.left - Zidan.width &&
+                    this.left < ele.left + ele.div.offsetWidth + Zidan.width
+                ) {
+                    Map.changeScore(true)
+                    ele.destroy()
+                    this.destroy()
+                }
+            })
+        }
+        destroy() {
+            debugger
+            this.timer && clearInterval(this.timer)
+            this.timer = null
+            Map.map.div.removeChild(this.div)
+        }
+    }
+    let map = new Map()
+    let flyer = new Flyer()
+    let diren = new Diren()
+    diren.rushB()
+</script>
